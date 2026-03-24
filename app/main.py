@@ -1,12 +1,12 @@
 import logging
 import time
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 
 from app.core.logging_config import setup_logging
+from app.db.database import engine
 from app.models.models import Base
 from app.routers import todos
-from app.db.database import engine
 
 logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
@@ -15,36 +15,50 @@ setup_logging()
 app.include_router(todos.router)
 
 
-@app.get("/health")
-def healthy():
-    return {"status": "health is OK"}
+@app.on_event("startup")
+async def startup_event():
+    logger.info("todo-service app ready and running")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("todo-service app is shutting down")
 
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
 
+    # Log request start
     logger.info(
-        "request_started main.py",
+        f"Request {request.url.path} started",
         extra={
             "path": request.url.path,
             "method": request.method,
             "start_time": start_time,
+            "status_code": None,
+            "duration_ms": None,
         },
     )
 
     response = await call_next(request)
-
     duration = time.time() - start_time
 
+    # Log request completion
     logger.info(
-        "Request_Completed main.py",
+        "Request completed",
         extra={
             "path": request.url.path,
             "method": request.method,
             "status_code": response.status_code,
             "duration_ms": round(duration * 1000, 2),
+            "start_time": start_time,
         },
     )
 
     return response
+
+
+@app.get("/health")
+def healthy():
+    return {"status": "health is OK"}
