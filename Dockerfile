@@ -29,7 +29,7 @@ COPY . .
 ENV PORT=8081
 
 # ---------- Run Application ----------
-# Use gunicorn with uvicorn workers (recommended for Cloud Run)
+# Use gunicorn with uvicorn workers (recommended for Cloud Run.)
 CMD exec gunicorn \
   -k uvicorn.workers.UvicornWorker \
   --bind 0.0.0.0:$PORT \
