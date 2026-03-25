@@ -30,4 +30,11 @@ ENV PORT=8081
 
 # ---------- Run Application ----------
 # Use gunicorn with uvicorn workers (recommended for Cloud Run)
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8081", "--workers", "2", "--threads", "4", "--timeout", "0", "app.main:app"]
+CMD exec gunicorn \
+  -k uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:$PORT \
+  --workers 1 \
+  --threads 4 \
+  --log-level info \
+  --timeout 0 \
+  app.main:app
