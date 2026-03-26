@@ -1,0 +1,75 @@
+
+user table in database - my-first-postegresql-db
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR UNIQUE,
+    username VARCHAR UNIQUE,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    hashed_password VARCHAR,
+    is_active BOOLEAN DEFAULT TRUE,
+    roles VARCHAR
+);
+
+todo-table in database - my-second-postgresql-db
+CREATE TABLE todos (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR,
+    description VARCHAR,
+    priority INTEGER,
+    completed BOOLEAN DEFAULT FALSE,
+    owner_id INTEGER
+);
+
+once the user-service and todo-service are created in local, we can check their cloud build and cloud run deployment using Gcloud command. Refer below
+
+command to create todo-service build service account:
+gcloud iam service-accounts create todo-service-build-sa --description="TodoService Cloud Build service account" --display-name="TodoService Build Service Account"
+
+command to create user-service build service account:
+gcloud iam service-accounts create user-service-build-sa --description="UserService Cloud Build service account" --display-name="UserService Build Service Account"
+
+command to give roles to service account to successfully execute cloud build:
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/artifactregistry.writer"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/storage.creator"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/storage.viewer"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/logging.logWriter"
+
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/artifactregistry.writer"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/storage.creator"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/storage.viewer"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-build-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/logging.logWriter"
+
+
+command to create todo-service runtime service account:
+gcloud iam service-accounts create todo-service-runtime-sa --description="Runtime service account for microservices" --display-name="todo-service Runtime Service Account"
+
+command to create todo-service runtime service account:
+gcloud iam service-accounts create user-service-runtime-sa --description="Runtime service account for microservices" --display-name="user-service Runtime Service Account"
+
+command to give roles to service account to successfully execute cloud run deplyment:
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-runtime-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/cloudsql.client"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:todo-service-runtime-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/logging.logWriter"
+
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-runtime-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/cloudsql.client"
+gcloud projects add-iam-policy-binding project-7f7e50ff-c654-4c24-867 --member="serviceAccount:user-service-runtime-sa@project-7f7e50ff-c654-4c24-867.iam.gserviceaccount.com" --role="roles/logging.logWriter"
+
+gcloud command to execute user-service's cloud build
+gcloud builds submit --tag asia-south1-docker.pkg.dev/project-7f7e50ff-c654-4c24-867/my-first-artifact-registry/user-service:v1
+
+gcloud command to deploy user-service in cloud run
+gcloud run deploy user-service --image asia-south1-docker.pkg.dev/project-7f7e50ff-c654-4c24-867/my-first-artifact-registry/user-service:v1 --region asia-south1   --allow-unauthenticated --set-env-vars ENV=prod,DB_NAME=my-first-postgresql-db,DB_USER=Aneesh,DB_PASSWORD=Kunmun123$,INSTANCE_CONNECTION_NAME=project-7f7e50ff-c654-4c24-867:us-central1:my-first-postgresql,SECRET_KEY=add155d4e7c804ca853d3706fd3247d7ad32b45e3ceaf20956adb6df21c47b40,ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+gcloud command to execute todo-service's cloud build
+gcloud builds submit --tag asia-south1-docker.pkg.dev/project-7f7e50ff-c654-4c24-867/my-first-artifact-registry/todo-service:v1
+
+gcloud command to deploy user-service in cloud run
+gcloud run deploy todo-service --image asia-south1-docker.pkg.dev/project-7f7e50ff-c654-4c24-867/my-first-artifact-registry/todo-service:v1 --region asia-south1   --allow-unauthenticated --set-env-vars ENV=prod,DB_NAME=my-second-postgresql-db,DB_USER=Aneesh,DB_PASSWORD=Kunmun123$,INSTANCE_CONNECTION_NAME=project-7f7e50ff-c654-4c24-867:us-central1:my-first-postgresql,SECRET_KEY=add155d4e7c804ca853d3706fd3247d7ad32b45e3ceaf20956adb6df21c47b40,ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+once the cloud build and cloud run deployment are successful using manual command run in Gcloud SDK, we can create CI/CD piple line where the steps are mentioned in cloudbuild.yaml file in inside the project. user-service and todo-service have their own cloudbuild.yaml files.
+
+
+
+
