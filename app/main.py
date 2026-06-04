@@ -15,14 +15,27 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    connector = await create_async_connector()          # ← created on the running loop
+    logger.info("todo-service starting up...")
+
+    connector = await create_async_connector()
     engine, session_local = create_engine_and_sessionmaker(connector)
+
     app.state.engine = engine
     app.state.SessionLocal = session_local
+
     await init_db(engine)
-    yield                                     # app runs here
-    await engine.dispose()
-    # connector is closed automatically when the async with block exits
+
+    logger.info("todo-service startup completed and ready to accept requests")
+
+    try:
+        yield  # ← application runs here
+    finally:
+        logger.info("todo-service shutting down...")
+
+        await engine.dispose()
+
+        logger.info("database engine disposed")
+        logger.info("todo-service shutdown completed")
 
 
 app = FastAPI(lifespan=lifespan)
