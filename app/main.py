@@ -2,27 +2,32 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
+from google.cloud.sql.connector import Connector, create_async_connector
 
 from app.core.logging_config import setup_logging
-from app.db.database import engine
-from app.models.models import Base
+from app.db.database import create_engine_and_sessionmaker
+from app.db.init_db import init_db
 from app.routers import todos
+from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
-Base.metadata.create_all(bind=engine)
-app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    connector = await create_async_connector()          # ← created on the running loop
+    engine, session_local = create_engine_and_sessionmaker(connector)
+    app.state.engine = engine
+    app.state.SessionLocal = session_local
+    await init_db(engine)
+    yield                                     # app runs here
+    await engine.dispose()
+    # connector is closed automatically when the async with block exits
+
+
+app = FastAPI(lifespan=lifespan)
 setup_logging()
 app.include_router(todos.router)
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("todo-service app ready and running")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("todo-service app is shutting down")
 
 
 @app.middleware("http")
