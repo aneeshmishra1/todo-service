@@ -6,6 +6,7 @@ from starlette import status
 from app.core.config import settings
 from app.schemas.user_schema import CurrentUser
 
+
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 security = HTTPBearer()

@@ -2,7 +2,7 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
-from google.cloud.sql.connector import Connector, create_async_connector
+from google.cloud.sql.connector import create_async_connector
 
 from app.core.logging_config import setup_logging
 from app.db.database import create_engine_and_sessionmaker
